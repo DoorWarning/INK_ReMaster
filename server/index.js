@@ -20,7 +20,11 @@ mongoose.connect(process.env.MONGO_URI)
 
 // 2. 미들웨어 설정
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: [
+    'http://localhost:5173',
+    'https://mediaink.vercel.app',      // Vercel 배포 주소 (여기가 핵심!)
+    process.env.CLIENT_URL              // 환경변수로 설정한 주소 (혹시 몰라서 추가)
+  ],
   credentials: true,
 }));
 app.use(express.json());
