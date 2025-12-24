@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import api from '../api/axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IoClose, IoAdd, IoTrashOutline, IoReceiptOutline } from 'react-icons/io5';
@@ -9,33 +9,26 @@ const LedgerModal = ({ onClose, onUpdate, initialData }) => {
   const { user } = useAuthStore();
   const { showAlert } = useAlertStore();
   
-  // 1. 상태 초기화
   const [semester, setSemester] = useState(''); 
   const [title, setTitle] = useState('');
+  
   const [items, setItems] = useState([
     { description: '', qty: 1, price: 0, amount: 0, note: '' }
   ]);
   
-  // 파일 관련
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
 
-  // 2. [핵심] 수정 모드일 경우 데이터 채워넣기
   useEffect(() => {
     if (initialData) {
       setSemester(initialData.semester || '');
       setTitle(initialData.title || '');
-      
-      // 기존 아이템이 있으면 불러오고, 없으면 기본 빈 칸
       if (initialData.items && initialData.items.length > 0) {
         setItems(initialData.items);
       }
-      // (참고: 기존 이미지를 보여주는 로직은 복잡해질 수 있어 여기선 생략합니다. 
-      //  필요하면 initialData.imageUrls를 state로 관리해서 보여줘야 합니다.)
     }
   }, [initialData]);
 
-  // 아이템 변경 핸들러
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
@@ -47,8 +40,6 @@ const LedgerModal = ({ onClose, onUpdate, initialData }) => {
 
   const addItem = () => setItems([...items, { description: '', qty: 1, price: 0, amount: 0, note: '' }]);
   const removeItem = (index) => setItems(items.filter((_, i) => i !== index));
-  
-  // 총액 계산
   const totalAmount = items.reduce((sum, item) => sum + Number(item.amount), 0);
 
   const handleFileChange = (e) => {
@@ -62,12 +53,12 @@ const LedgerModal = ({ onClose, onUpdate, initialData }) => {
     if (!title.trim()) return showAlert("행사 이름을 입력해주세요.");
     
     try {
-      let imageUrls = initialData?.imageUrls || []; // 수정 시 기존 이미지 유지
-
-      // 새 파일 업로드
+      let imageUrls = initialData?.images || [];
+      
       if (files.length > 0) {
         const formData = new FormData();
         files.forEach(f => formData.append('images', f));
+        // 🔥 [수정] /api 제거
         const upRes = await api.post('/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
@@ -78,20 +69,21 @@ const LedgerModal = ({ onClose, onUpdate, initialData }) => {
         semester, title, items, totalAmount, imageUrls, userId: user._id
       };
 
-      // 3. [분기 처리] 수정(PUT) vs 생성(POST)
       if (initialData) {
+        // 🔥 [수정] /api 제거
         await api.put(`/ledgers/${initialData._id}`, payload);
         showAlert("장부가 수정되었습니다! ✏️");
       } else {
+        // 🔥 [수정] /api 제거
         await api.post('/ledgers', payload);
         showAlert("장부가 등록되었습니다! 💰");
       }
 
-      onUpdate(); // 목록 새로고침
-      onClose();  // 모달 닫기
+      onUpdate();
+      onClose();
     } catch (err) {
       console.error(err);
-      showAlert("저장 실패");
+      showAlert("작업 실패");
     }
   };
 
@@ -106,13 +98,14 @@ const LedgerModal = ({ onClose, onUpdate, initialData }) => {
           {/* 헤더 */}
           <div className="bg-ink p-4 flex justify-between items-center text-white">
             <h2 className="text-xl font-display flex items-center gap-2">
-              <IoReceiptOutline /> {initialData ? '회계 내역 수정' : '회계 내역 작성'}
+              <IoReceiptOutline /> 
+              {initialData ? '회계 내역 수정' : '회계 내역 작성'}
             </h2>
             <button onClick={onClose}><IoClose size={24} /></button>
           </div>
 
           <div className="p-6 overflow-y-auto flex-1">
-            {/* 기본 정보 입력 */}
+            {/* 기본 정보 */}
             <div className="flex gap-4 mb-4">
               <div className="w-1/3">
                 <label className="block font-bold text-sm mb-1">기간/학기</label>
@@ -136,7 +129,7 @@ const LedgerModal = ({ onClose, onUpdate, initialData }) => {
               </div>
             </div>
 
-            {/* 엑셀 테이블 */}
+            {/* 엑셀 입력 테이블 */}
             <div className="border-2 border-ink mb-4 overflow-hidden rounded-sm">
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-100 border-b-2 border-ink text-ink">
@@ -157,7 +150,7 @@ const LedgerModal = ({ onClose, onUpdate, initialData }) => {
                       <td className="p-2"><input type="text" value={item.description} onChange={e => handleItemChange(idx, 'description', e.target.value)} className="w-full bg-gray-50 border border-gray-300 p-1" placeholder="품목" /></td>
                       <td className="p-2"><input type="number" value={item.price} onChange={e => handleItemChange(idx, 'price', e.target.value)} className="w-full bg-gray-50 border border-gray-300 p-1 text-right" /></td>
                       <td className="p-2"><input type="number" value={item.qty} onChange={e => handleItemChange(idx, 'qty', e.target.value)} className="w-full bg-gray-50 border border-gray-300 p-1 text-center" /></td>
-                      <td className="p-2"><input type="text" value={Number(item.amount).toLocaleString()} disabled className="w-full bg-gray-100 border border-transparent p-1 text-right font-bold text-ink" /></td>
+                      <td className="p-2"><input type="text" value={item.amount.toLocaleString()} disabled className="w-full bg-gray-100 border border-transparent p-1 text-right font-bold text-ink" /></td>
                       <td className="p-2"><input type="text" value={item.note} onChange={e => handleItemChange(idx, 'note', e.target.value)} className="w-full bg-gray-50 border border-gray-300 p-1" /></td>
                       <td className="p-2 text-center"><button onClick={() => removeItem(idx)} className="text-red-400 hover:text-red-600"><IoTrashOutline /></button></td>
                     </tr>
@@ -187,7 +180,9 @@ const LedgerModal = ({ onClose, onUpdate, initialData }) => {
 
           <div className="p-4 border-t-2 border-gray-200 bg-gray-50 flex justify-end gap-3">
              <button onClick={onClose} className="px-6 py-2 font-bold text-gray-500 border-2 border-gray-300 bg-white hover:bg-gray-100">취소</button>
-             <button onClick={handleSubmit} className="px-6 py-2 font-bold text-white bg-ink border-2 border-ink hover:bg-gray-800">{initialData ? '수정 저장' : '등록하기'}</button>
+             <button onClick={handleSubmit} className="px-6 py-2 font-bold text-white bg-ink border-2 border-ink hover:bg-gray-800">
+               {initialData ? '수정하기' : '등록하기'}
+             </button>
           </div>
         </motion.div>
       </div>
