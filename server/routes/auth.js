@@ -1,3 +1,4 @@
+// server/routes/auth.js
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
@@ -68,12 +69,15 @@ router.post('/login', async (req, res) => {
 
     const token = generateToken(user);
 
+    // 🔥 [수정] 클라이언트에 기수(generation)와 학번(studentId) 전달
     res.json({
       token,
       _id: user._id,
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      studentId: user.studentId, // ✅ 추가됨
+      generation: user.generation // ✅ 추가됨
     });
 
   } catch (err) {
@@ -147,12 +151,16 @@ router.post('/sync', async (req, res) => {
     if (!user.isApproved) return res.status(403).json({ msg: "approval_pending" });
 
     const token = generateToken(user);
+    
+    // 🔥 [수정] 클라이언트에 기수(generation)와 학번(studentId) 전달
     res.json({
       token,
       _id: user._id,
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      studentId: user.studentId, // ✅ 추가됨
+      generation: user.generation // ✅ 추가됨
     });
   } catch (err) {
     res.status(500).json(err);
