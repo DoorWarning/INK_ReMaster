@@ -1,147 +1,180 @@
-// client/src/pages/MyPage.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from '../api/axios'
 import useAuthStore from '../store/useAuthStore';
+import api from '../api/axios';
 import useAlertStore from '../store/useAlertStore';
-import { IoArrowBack, IoSaveOutline } from 'react-icons/io5';
 
 const MyPage = () => {
-  const { user, login } = useAuthStore(); // login 함수로 스토어 정보 업데이트
+  const { user, checkAuth } = useAuthStore(); // checkAuth로 최신 정보 갱신 가능
   const { showAlert } = useAlertStore();
-  const navigate = useNavigate();
 
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  // 초기 상태를 빈 값으로 둠 (user가 아직 로드 안 됐을 수 있음)
+  const [formData, setFormData] = useState({
+    name: '',
+    studentId: '',
+    generation: '',
+    email: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
-  // 초기 데이터 로드
+  const [loading, setLoading] = useState(true); // 로딩 상태 관리
+
+  // 🔥 [핵심] user 정보가 변경(로드)되면 폼 데이터에 동기화
   useEffect(() => {
     if (user) {
-      setName(user.name);
-    } else {
-      showAlert("로그인이 필요합니다.");
-      navigate('/login');
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || '',
+        studentId: user.studentId || '',     // 학번
+        generation: user.generation || '',   // 기수
+        email: user.email || ''
+      }));
+      setLoading(false); // 데이터 로드 완료
     }
-  }, [user, navigate, showAlert]);
+  }, [user]); // user가 바뀌면 실행됨
 
-  const handleUpdate = async () => {
-    if (!name.trim()) return showAlert("이름을 입력해주세요.");
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     
-    // 비밀번호 변경 시도 시 체크
-    if (password || confirmPassword) {
-      if (password !== confirmPassword) {
-        return showAlert("비밀번호가 일치하지 않습니다.");
-      }
-      if (password.length < 6) {
-        return showAlert("비밀번호는 6자 이상이어야 합니다.");
-      }
+    if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
+      return showAlert("새 비밀번호가 일치하지 않습니다.");
     }
 
     try {
-      const res = await api.put(`/users/profile/${user._id}`, {
-        userId: user._id, // 본인 확인용
-        name,
-        password: password || undefined // 비어있으면 안 보냄
+      // 정보 수정 요청 (비밀번호 변경 포함)
+      await api.put('/auth/update', {
+        name: formData.name,
+        generation: formData.generation, // 기수 수정 포함
+        // studentId는 보통 수정 불가하게 막지만, 필요하면 포함
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword
       });
-
-      // 스토어 정보 업데이트 (이름이 바뀌었을 수 있으므로)
-      // 기존 user 정보에 새로운 name 등을 덮어씌움
-      login({ ...user, name: res.data.name }); 
       
-      showAlert("정보가 수정되었습니다! 🎉");
-      setPassword('');
-      setConfirmPassword('');
+      showAlert("회원 정보가 수정되었습니다.");
+      
+      // 🔥 수정 후 최신 정보 다시 가져오기 (Store 갱신)
+      await checkAuth(); 
+      
+      // 비밀번호 필드 초기화
+      setFormData(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
     } catch (err) {
       console.error(err);
-      showAlert("수정 실패. 서버 오류가 발생했습니다.");
+      showAlert(err.response?.data?.message || "정보 수정 실패");
     }
   };
 
-  if (!user) return null;
+  if (loading) return <div className="p-10 text-center">정보를 불러오는 중...</div>;
 
   return (
-    <div className="min-h-screen bg-paper p-4 md:p-8 font-sans flex items-center justify-center">
-      <div className="w-full max-w-lg bg-white border-3 border-ink p-8 shadow-[8px_8px_0px_0px_var(--color-ink)] rounded-sm">
-        
-        {/* 상단 네비게이션 */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-display text-ink">내 정보 수정</h2>
-          <button onClick={() => navigate('/')} className="p-2 hover:bg-gray-100 rounded-full transition">
-            <IoArrowBack size={24} />
-          </button>
+    <div className="max-w-md mx-auto mt-10 mb-20 p-6 bg-white border-2 border-ink shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+      <h2 className="text-2xl font-display text-ink mb-6 text-center">내 정보 수정</h2>
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* 이메일 (수정 불가) */}
+        <div>
+          <label className="block font-bold text-sm mb-1">이메일</label>
+          <input 
+            type="text" 
+            name="email" 
+            value={formData.email} 
+            disabled 
+            className="w-full bg-gray-100 border-2 border-gray-300 p-2 text-gray-500 font-bold cursor-not-allowed"
+          />
         </div>
 
-        {/* 읽기 전용 정보 (수정 불가) */}
-        <div className="space-y-4 mb-6 p-4 bg-gray-50 border-2 border-dashed border-gray-300 rounded-sm">
-          <div>
-            <label className="block text-xs font-bold text-gray-500 mb-1">이메일 (아이디)</label>
-            <div className="font-bold text-ink">{user.email}</div>
-          </div>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 mb-1">학번</label>
-              <div className="font-bold text-ink">{user.studentId}</div>
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 mb-1">기수</label>
-              <div className="font-bold text-ink">{user.generation}기</div>
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 mb-1">역할</label>
-              <div className="font-bold text-ink uppercase">{user.role === 'admin' ? '임원진' : '부원'}</div>
-            </div>
-          </div>
+        {/* 이름 */}
+        <div>
+          <label className="block font-bold text-sm mb-1">이름</label>
+          <input 
+            type="text" 
+            name="name" 
+            value={formData.name} 
+            onChange={handleChange}
+            className="w-full border-2 border-ink p-2 font-medium focus:bg-yellow-50 focus:outline-none"
+          />
         </div>
 
-        {/* 수정 가능 정보 */}
-        <div className="space-y-4">
-          <div>
-            <label className="block font-bold mb-2 text-ink">이름</label>
+        <div className="flex gap-4">
+          {/* 학번 (수정 불가 또는 가능) */}
+          <div className="flex-1">
+            <label className="block font-bold text-sm mb-1">학번</label>
             <input 
               type="text" 
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full border-2 border-ink p-3 focus:outline-none focus:bg-yellow-50 font-medium"
+              name="studentId" 
+              value={formData.studentId} 
+              disabled // 학번은 보통 수정 불가능하게 처리
+              className="w-full bg-gray-100 border-2 border-gray-300 p-2 text-gray-500 font-bold"
             />
           </div>
 
-          <hr className="border-gray-200 my-4" />
-          
-          <p className="text-sm text-gray-500 font-bold">👇 비밀번호 변경 (비워두면 변경 안 됨)</p>
-
-          <div>
-            <label className="block font-bold mb-2 text-ink">새 비밀번호</label>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="변경할 경우에만 입력"
-              className="w-full border-2 border-ink p-3 focus:outline-none focus:bg-yellow-50 font-medium"
-            />
+          {/* 🔥 기수 (수정 가능하게 처리) */}
+          <div className="flex-1">
+            <label className="block font-bold text-sm mb-1">기수</label>
+            <div className="relative">
+              <input 
+                type="number" 
+                name="generation" 
+                value={formData.generation} 
+                onChange={handleChange}
+                className="w-full border-2 border-ink p-2 font-medium focus:bg-yellow-50 focus:outline-none pr-8"
+              />
+              <span className="absolute right-3 top-2.5 font-bold text-gray-400">기</span>
+            </div>
           </div>
+        </div>
 
-          <div>
-            <label className="block font-bold mb-2 text-ink">비밀번호 확인</label>
-            <input 
-              type="password" 
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="한 번 더 입력"
-              className="w-full border-2 border-ink p-3 focus:outline-none focus:bg-yellow-50 font-medium"
-            />
-          </div>
+        <hr className="border-t-2 border-gray-200 my-4 border-dashed" />
+
+        {/* 비밀번호 변경 영역 */}
+        <div>
+          <label className="block font-bold text-sm mb-1">현재 비밀번호 (정보 수정 시 필수)</label>
+          <input 
+            type="password" 
+            name="currentPassword" 
+            value={formData.currentPassword} 
+            onChange={handleChange}
+            className="w-full border-2 border-ink p-2 focus:bg-yellow-50 focus:outline-none"
+            placeholder="변경하려면 현재 비밀번호 입력"
+          />
+        </div>
+
+        <div>
+          <label className="block font-bold text-sm mb-1">새 비밀번호</label>
+          <input 
+            type="password" 
+            name="newPassword" 
+            value={formData.newPassword} 
+            onChange={handleChange}
+            className="w-full border-2 border-ink p-2 focus:bg-yellow-50 focus:outline-none"
+            placeholder="변경할 비밀번호 (선택)"
+          />
+        </div>
+
+        <div>
+          <label className="block font-bold text-sm mb-1">새 비밀번호 확인</label>
+          <input 
+            type="password" 
+            name="confirmPassword" 
+            value={formData.confirmPassword} 
+            onChange={handleChange}
+            className="w-full border-2 border-ink p-2 focus:bg-yellow-50 focus:outline-none"
+            placeholder="새 비밀번호 다시 입력"
+          />
         </div>
 
         <button 
-          onClick={handleUpdate}
-          className="w-full mt-8 bg-ink text-white font-bold py-3 border-2 border-ink shadow-md hover:-translate-y-1 transition-transform flex items-center justify-center gap-2"
+          type="submit" 
+          className="w-full bg-ink text-white font-bold py-3 mt-4 hover:bg-gray-800 transition shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-none"
         >
-          <IoSaveOutline size={20} />
-          저장하기
+          정보 수정 저장
         </button>
-
-      </div>
+      </form>
     </div>
   );
 };
