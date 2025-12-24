@@ -10,6 +10,7 @@ const authRoute = require('./routes/auth');
 const postRoute = require('./routes/posts');
 const uploadRoute = require('./routes/upload');
 const userRoute = require('./routes/users');
+const contestRoutes = require('./routes/contests');
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use('/api/users', userRoute);  // 유저 관리 관련
 app.use('/api/events', require('./routes/events'));  // 달력 일정 관련
 app.use('/api/ledgers', require('./routes/ledgers')); // 회계 관련
 app.use('/api/config', require('./routes/config')); // 카카오톡 관련
+app.use('/api/contests', contestRoutes); // 공모전 관련
 
 // 5. 서버 시작
 const PORT = process.env.PORT || 4000;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // 🔥 추가됨
 import useAuthStore from '../store/useAuthStore';
 import api from '../api/axios';
 import useAlertStore from '../store/useAlertStore';
@@ -6,6 +7,7 @@ import useAlertStore from '../store/useAlertStore';
 const MyPage = () => {
   const { user, checkAuth } = useAuthStore(); // checkAuth로 최신 정보 갱신 가능
   const { showAlert } = useAlertStore();
+  const navigate = useNavigate(); // 🔥 추가됨
 
   // 초기 상태를 빈 값으로 둠 (user가 아직 로드 안 됐을 수 있음)
   const [formData, setFormData] = useState({
@@ -73,7 +75,20 @@ const MyPage = () => {
 
   return (
     <div className="max-w-md mx-auto mt-10 mb-20 p-6 bg-white border-2 border-ink shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-      <h2 className="text-2xl font-display text-ink mb-6 text-center">내 정보 수정</h2>
+      
+      {/* 🔥 [추가] 뒤로가기 버튼과 제목 영역 */}
+      <div className="relative mb-6 text-center">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="absolute left-0 top-1 text-gray-400 hover:text-ink transition-colors"
+          title="뒤로가기"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+        </button>
+        <h2 className="text-2xl font-display text-ink inline-block">내 정보 수정</h2>
+      </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* 이메일 (수정 불가) */}
