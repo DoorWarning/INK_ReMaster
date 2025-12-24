@@ -3,8 +3,8 @@ const express = require('express');
 const router = express.Router();
 const Contest = require('../models/Contest');
 const ContestEntry = require('../models/ContestEntry');
-const Event = require('../models/Event'); // 캘린더 연동용
-const auth = require('../middleware/auth'); // (로그인 미들웨어 필요 시 사용, 여기선 로직 위주)
+const Event = require('../models/Event'); 
+// ❌ const auth = require('../middleware/auth'); // 이 줄을 삭제했습니다. (기존 로직 사용)
 
 // 1. 공모전/정기모임 생성 (관리자용)
 router.post('/create', async (req, res) => {
@@ -14,23 +14,25 @@ router.post('/create', async (req, res) => {
       submissionStart, submissionEnd, votingStart, votingEnd 
     } = req.body;
 
+    // (필요하다면 여기서 req.body.userId나 role을 체크하는 기존 로직을 추가할 수 있습니다)
+    
     const newContest = new Contest({
       title, description, category,
       submissionStart, submissionEnd, votingStart, votingEnd
     });
 
-    // 🔥 [핵심] 공모전(contest)인 경우 달력에 'important' 일정 자동 추가
+    // 공모전(contest)인 경우 달력에 'important' 일정 자동 추가
     if (category === 'contest' && votingStart && votingEnd) {
       const newEvent = new Event({
-        title: `[투표] ${title}`, // 달력에 표시될 이름
+        title: `[투표] ${title}`,
         start: votingStart,
         end: votingEnd,
-        type: 'important', // 빨간색 강조
+        type: 'important', 
         description: `${title} 투표 기간입니다.`
       });
       
       const savedEvent = await newEvent.save();
-      newContest.linkedEventId = savedEvent._id; // 연결 고리 저장
+      newContest.linkedEventId = savedEvent._id;
     }
 
     await newContest.save();
@@ -52,19 +54,18 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 3. 특정 공모전 조회 (작품 목록 포함 + 순위 숨김 로직)
+// 3. 특정 공모전 조회
 router.get('/:id', async (req, res) => {
   try {
     const contest = await Contest.findById(req.params.id);
     if (!contest) return res.status(404).json({ msg: "존재하지 않는 공모전입니다." });
 
     let entries = await ContestEntry.find({ contest: contest._id })
-      .populate('author', 'name generation studentId'); // 작가 정보 가져오기
+      .populate('author', 'name generation studentId'); 
 
     const now = new Date();
 
-    // 🔥 [핵심] 결과 공개 로직 처리
-    // 공모전(contest)이고, 아직 투표 종료 전이라면 -> 투표 수(rank)를 숨김
+    // 공모전(contest)이고 투표 기간 중이면 순위 비공개 (섞기)
     if (contest.category === 'contest' && new Date(contest.votingEnd) > now) {
       entries = entries.map(entry => ({
         _id: entry._id,
@@ -72,23 +73,18 @@ router.get('/:id', async (req, res) => {
         title: entry.title,
         description: entry.description,
         author: entry.author,
-        // votes 배열을 숨기고, 내가 투표했는지 여부만 알려줄 수도 있음 (여기선 단순화)
         voteCount: null, // 개수 숨김
-        isHidden: true   // 프론트에서 "집계 중" 표시용
+        isHidden: true   
       }));
-      
-      // 순서도 섞어버리는 것이 공정함 (Fisher-Yates Shuffle 등 적용 권장)
       entries.sort(() => Math.random() - 0.5);
 
     } else {
-      // 정기모임(regular)이거나 투표가 끝난 공모전 -> 투표 수 공개 및 정렬
+      // 결과 공개
       entries = entries.map(entry => ({
         ...entry.toObject(),
-        voteCount: entry.votes.length, // 개수 공개
+        voteCount: entry.votes.length,
         isHidden: false
       }));
-
-      // 투표 순 내림차순 정렬
       entries.sort((a, b) => b.voteCount - a.voteCount);
     }
 
@@ -100,13 +96,16 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// 4. 작품 출품 (업로드)
+// 4. 작품 출품
 router.post('/:id/upload', async (req, res) => {
   try {
-    const { authorId, imageUrl, title, description } = req.body;
+    // 🔥 기존 posts.js 방식처럼 body에서 정보 받음
+    const { authorId, imageUrl, title, description } = req.body; 
+    
+    if (!authorId) return res.status(401).json({ msg: "로그인이 필요합니다." });
+
     const contest = await Contest.findById(req.params.id);
 
-    // 기간 체크 (공모전인 경우만)
     if (contest.category === 'contest') {
       const now = new Date();
       if (now < new Date(contest.submissionStart) || now > new Date(contest.submissionEnd)) {
@@ -130,17 +129,19 @@ router.post('/:id/upload', async (req, res) => {
   }
 });
 
-// 5. 투표하기 / 투표 취소 (토글)
+// 5. 투표하기 / 투표 취소
 router.post('/entry/:entryId/vote', async (req, res) => {
   try {
-    const { userId } = req.body; // 로그인한 유저 ID
-    const entry = await ContestEntry.findById(req.params.entryId).populate('contest');
+    // 🔥 기존 방식: body에서 userId 받기
+    const { userId } = req.body; 
     
+    if (!userId) return res.status(401).json({ msg: "로그인이 필요합니다." });
+
+    const entry = await ContestEntry.findById(req.params.entryId).populate('contest');
     if (!entry) return res.status(404).json({ msg: "작품을 찾을 수 없습니다." });
 
     const contest = entry.contest;
 
-    // 투표 기간 체크 (공모전인 경우만)
     if (contest.category === 'contest') {
       const now = new Date();
       if (now < new Date(contest.votingStart) || now > new Date(contest.votingEnd)) {
@@ -148,16 +149,13 @@ router.post('/entry/:entryId/vote', async (req, res) => {
       }
     }
 
-    // 이미 투표했는지 확인
     const voteIndex = entry.votes.indexOf(userId);
 
     if (voteIndex === -1) {
-      // 투표 안했으면 -> 추가
       entry.votes.push(userId);
       await entry.save();
       res.json({ msg: "투표 완료!", voted: true, total: entry.votes.length });
     } else {
-      // 이미 했으면 -> 취소
       entry.votes.splice(voteIndex, 1);
       await entry.save();
       res.json({ msg: "투표 취소", voted: false, total: entry.votes.length });

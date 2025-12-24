@@ -13,6 +13,9 @@ import useAlertStore from './store/useAlertStore';
 import GlobalAlert from './components/GlobalAlert';
 import Footer from './components/Footer'; // 👈 Footer 임포트
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import ContestListPage from './pages/ContestListPage';
+import ContestDetailPage from './pages/ContestDetailPage';
+import AdminContestPage from './pages/AdminContestPage';
 
 // 로그인 처리 및 메인 페이지 분기 컴포넌트
 const AuthHandler = () => {
@@ -80,6 +83,9 @@ function App() {
             <Route path="/intro" element={<IntroPage />} />
             <Route path="/mypage" element={<MyPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/contests" element={<ContestListPage />} />
+            <Route path="/contests/:id" element={<ContestDetailPage />} />
+            <Route path="/admin/contest/create" element={<AdminContestPage />} />
           </Routes>
         </div>
 

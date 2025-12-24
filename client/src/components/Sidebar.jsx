@@ -1,11 +1,18 @@
+// client/src/components/Sidebar.jsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IoClose, IoHomeOutline, IoInformationCircleOutline, IoMegaphoneOutline, IoColorPaletteOutline, IoTrophyOutline, IoImageOutline, IoWalletOutline, IoLogoDiscord, IoChatbubble, IoSettingsOutline } from 'react-icons/io5';
+import { 
+  IoClose, IoHomeOutline, IoInformationCircleOutline, IoMegaphoneOutline, 
+  IoColorPaletteOutline, IoTrophyOutline, IoImageOutline, IoWalletOutline, 
+  IoLogoDiscord, IoChatbubble, IoSettingsOutline 
+} from 'react-icons/io5';
+import { useNavigate } from 'react-router-dom'; // 👈 1. [추가] 페이지 이동을 위해 임포트
 import api from '../api/axios';
 import useAuthStore from '../store/useAuthStore';
 
 const Sidebar = ({ isOpen, onClose, onCategoryChange, isAuthenticated, handleLogout, onLogin }) => {
   const { user } = useAuthStore();
+  const navigate = useNavigate(); // 👈 2. [추가] 훅 사용
   
   // 🔥 상태 관리: 두 링크 모두 state로 관리
   const [kakaoLink, setKakaoLink] = useState('');
@@ -37,7 +44,7 @@ const Sidebar = ({ isOpen, onClose, onCategoryChange, isAuthenticated, handleLog
     } catch (err) { alert("권한이 없거나 오류 발생"); }
   };
 
-  // 2. 🔥 디스코드 링크 수정 (추가됨)
+  // 2. 🔥 디스코드 링크 수정
   const handleEditDiscord = async (e) => {
     e.preventDefault(); e.stopPropagation();
     const newLink = prompt("새 디스코드 초대 링크 입력:", discordLink);
@@ -55,10 +62,27 @@ const Sidebar = ({ isOpen, onClose, onCategoryChange, isAuthenticated, handleLog
     { id: 'intro', label: 'INK 소개', icon: <IoInformationCircleOutline /> },
     { id: 'notice', label: '공지사항', icon: <IoMegaphoneOutline /> },
     { id: 'art', label: 'ART', icon: <IoColorPaletteOutline /> },
-    { id: 'contest', label: '공모전', icon: <IoTrophyOutline /> },
+    { id: 'contest', label: '공모전 & 갤러리', icon: <IoTrophyOutline /> }, // 이름 약간 수정함 (선택사항)
     { id: 'photo', label: '행사 사진', icon: <IoImageOutline /> },
     { id: 'ledger', label: '회계 장부', icon: <IoWalletOutline /> },
   ];
+
+  // 🔥 [수정] 클릭 핸들러: 공모전일 때 페이지 이동, 나머지는 필터링
+  const handleItemClick = (id) => {
+    if (id === 'contest') {
+      navigate('/contests'); // 공모전 페이지로 이동
+    } else {
+      // 만약 현재 경로가 메인이 아니라면 메인으로 먼저 이동해야 할 수도 있음
+      if (window.location.pathname !== '/') {
+        navigate('/');
+        // 약간의 지연 후 카테고리 변경 (선택적)
+        setTimeout(() => onCategoryChange(id), 100);
+      } else {
+        onCategoryChange(id); // 기존 로직 (메인 페이지 내 필터링)
+      }
+    }
+    onClose(); // 사이드바 닫기
+  };
 
   return (
     <AnimatePresence>
@@ -83,7 +107,8 @@ const Sidebar = ({ isOpen, onClose, onCategoryChange, isAuthenticated, handleLog
               {menuItems.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => onCategoryChange(item.id)}
+                  // 👈 3. [수정] 위에서 만든 핸들러 적용
+                  onClick={() => handleItemClick(item.id)}
                   className="w-full flex items-center gap-3 px-4 py-3 font-bold text-lg rounded-sm transition-all text-gray-600 hover:bg-gray-100 hover:text-ink"
                 >
                   {item.icon}
@@ -114,7 +139,7 @@ const Sidebar = ({ isOpen, onClose, onCategoryChange, isAuthenticated, handleLog
                 </div>
               )}
 
-              {/* 🔥 디스코드 버튼 (동일한 로직 적용) */}
+              {/* 🔥 디스코드 버튼 */}
               {isAuthenticated && (
                 <div className="relative group">
                   <a 
