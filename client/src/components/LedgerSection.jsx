@@ -1,127 +1,148 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { IoTrashOutline, IoPencil, IoAdd } from 'react-icons/io5';
-// ... imports
+import LedgerModal from './LedgerModal'; // 🔥 모달 import 필수!
+import useAuthStore from '../store/useAuthStore'; // 권한 확인용
 
 const LedgerSection = ({ isAdmin }) => {
-  // 1. 상태 관리 (State)
   const [ledgers, setLedgers] = useState([]);
   const [semesters, setSemesters] = useState([]);
-  const [selectedSemester, setSelectedSemester] = useState('2024-2'); // 학기 선택 (Selection)
+  const [selectedSemester, setSelectedSemester] = useState('2024-2'); // 기본값 혹은 API 로드 필요
 
-  // 🔥 [수정] 모달과 선택 데이터를 확실히 분리
-  const [showModal, setShowModal] = useState(false); // 오직 "창이 열렸나?"만 관리
-  const [targetLedger, setTargetLedger] = useState(null); // 오직 "수정할 놈이 누구냐?"만 관리
+  // 모달 및 선택된 데이터 상태
+  const [showModal, setShowModal] = useState(false);
+  const [targetLedger, setTargetLedger] = useState(null);
 
-  const [formData, setFormData] = useState({
-    date: '',
-    description: '',
-    type: 'expense',
-    amount: '',
-    category: '회식비',
-    semester: '2024-2'
-  });
-
-  // ... (fetchSemesters, fetchLedgers 등 조회 로직은 동일)
-
-  // 2. [Case A] "추가하기" 버튼 눌렀을 때
-  const handleOpenCreate = () => {
-    setTargetLedger(null); // 타겟 없음 (생성 모드)
-    setFormData({          // 폼 초기화
-      date: new Date().toISOString().split('T')[0],
-      description: '',
-      type: 'expense',
-      amount: '',
-      category: '회식비',
-      semester: selectedSemester // 현재 보고 있는 학기로 자동 설정
-    });
-    setShowModal(true);    // 모달 열기
-  };
-
-  // 3. [Case B] "수정(연필)" 버튼 눌렀을 때
-  const handleOpenEdit = (item) => {
-    setTargetLedger(item); // 타겟 설정 (수정 모드)
-    setFormData({          // 기존 데이터 폼에 채우기
-      date: item.date.split('T')[0],
-      description: item.description,
-      type: item.type,
-      amount: item.amount,
-      category: item.category,
-      semester: item.semester
-    });
-    setShowModal(true);    // 모달 열기
-  };
-
-  // 4. 저장 (Submit) 핸들러
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // 1. 학기 목록 불러오기 (예시)
+  const fetchSemesters = useCallback(async () => {
     try {
-      if (targetLedger) {
-        // [수정 로직] targetLedger가 있으면 PUT
-        await api.put(`/ledgers/${targetLedger._id}`, formData);
-        alert("수정되었습니다.");
-      } else {
-        // [생성 로직] targetLedger가 없으면 POST
-        await api.post('/ledgers', formData);
-        alert("추가되었습니다.");
-      }
-
-      // 공통 마무리
-      setShowModal(false);
-      setTargetLedger(null);
-      fetchLedgers(); // 목록 갱신
+      const res = await api.get('/ledgers/semesters'); // 백엔드 라우트 필요
+      if (res.data.length > 0) setSemesters(res.data);
     } catch (err) {
       console.error(err);
-      alert("오류가 발생했습니다.");
     }
+  }, []);
+
+  // 2. 장부 목록 불러오기
+  const fetchLedgers = useCallback(async () => {
+    try {
+      // selectedSemester가 바뀔 때마다 호출됨
+      const res = await api.get(`/ledgers?semester=${selectedSemester}`);
+      setLedgers(res.data);
+    } catch (err) {
+      console.error("장부 로드 실패", err);
+    }
+  }, [selectedSemester]);
+
+  useEffect(() => {
+    fetchLedgers();
+  }, [fetchLedgers]);
+
+  // 삭제 핸들러
+  const handleDelete = async (id) => {
+    if(!window.confirm("정말 삭제하시겠습니까?")) return;
+    try {
+      await api.delete(`/ledgers/${id}`);
+      fetchLedgers(); // 목록 갱신
+    } catch (err) {
+      alert("삭제 실패");
+    }
+  };
+
+  // 🔥 [핵심] 생성 모드로 모달 열기
+  const handleOpenCreate = () => {
+    setTargetLedger(null); // 데이터 없음 -> 생성 모드
+    setShowModal(true);
+  };
+
+  // 🔥 [핵심] 수정 모드로 모달 열기
+  const handleOpenEdit = (item) => {
+    setTargetLedger(item); // 데이터 있음 -> 수정 모드
+    setShowModal(true);
   };
 
   return (
     <div className="w-full p-4">
-      {/* ... 상단 학기 선택 드롭다운 등 ... */}
+      {/* 상단 컨트롤 바 */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-display text-ink">회계 장부</h2>
+        
+        <div className="flex gap-3">
+           {/* 학기 선택 셀렉트박스 (간단 구현) */}
+           <select 
+             className="border-2 border-ink p-2 font-bold"
+             value={selectedSemester}
+             onChange={(e) => setSelectedSemester(e.target.value)}
+           >
+             {/* 예시 옵션들, 실제론 semesters map */}
+             <option value="2025-1학기">2025-1학기</option>
+             <option value="2024-2학기">2024-2학기</option>
+           </select>
 
-      {/* 추가 버튼 */}
-      {isAdmin && (
-        <button onClick={handleOpenCreate} className="...">
-          <IoAdd /> 내역 추가
-        </button>
-      )}
+           {isAdmin && (
+            <button 
+              onClick={handleOpenCreate} 
+              className="flex items-center gap-2 bg-ink text-white px-4 py-2 font-bold hover:bg-gray-800 transition"
+            >
+              <IoAdd /> 내역 추가
+            </button>
+           )}
+        </div>
+      </div>
 
-      {/* 리스트 영역 */}
-      {/* ... 테이블 렌더링 ... */}
-      {ledgers.map((item) => (
-        <div key={item._id} className="...">
-          {/* 내용들... */}
-          
-          {/* 관리자 버튼 영역 */}
-          {isAdmin && (
-            <div className="flex gap-2">
-              {/* 수정 버튼: handleOpenEdit 호출 */}
-              <button onClick={() => handleOpenEdit(item)}>
-                <IoPencil />
-              </button>
-              {/* 삭제 버튼 */}
-              <button onClick={() => handleDelete(item._id)}>
-                <IoTrashOutline />
-              </button>
+      {/* 장부 리스트 */}
+      <div className="space-y-4">
+        {ledgers.length === 0 ? (
+          <p className="text-center text-gray-500 py-10">등록된 내역이 없습니다.</p>
+        ) : (
+          ledgers.map((item) => (
+            <div key={item._id} className="border-2 border-ink p-4 bg-white shadow-sm flex flex-col md:flex-row justify-between gap-4">
+              <div>
+                <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 font-bold mb-1 rounded">{item.semester}</span>
+                <h3 className="text-xl font-bold">{item.title}</h3>
+                <p className="text-sm text-gray-600 mt-1">총 지출: <span className="text-ink font-bold">{Number(item.totalAmount).toLocaleString()}원</span></p>
+                
+                {/* 세부 항목 미리보기 */}
+                <ul className="mt-2 text-sm text-gray-500 list-disc list-inside">
+                  {item.items.slice(0, 2).map((sub, i) => (
+                    <li key={i}>{sub.description} ({sub.amount.toLocaleString()}원)</li>
+                  ))}
+                  {item.items.length > 2 && <li>...외 {item.items.length - 2}건</li>}
+                </ul>
+              </div>
+
+              {/* 관리자 버튼 영역 */}
+              {isAdmin && (
+                <div className="flex md:flex-col justify-center gap-2 border-t md:border-t-0 md:border-l border-gray-200 pt-4 md:pt-0 md:pl-4">
+                  <button 
+                    onClick={() => handleOpenEdit(item)} 
+                    className="flex items-center gap-1 text-blue-500 hover:text-blue-700 font-bold text-sm"
+                  >
+                    <IoPencil /> 수정
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(item._id)} 
+                    className="flex items-center gap-1 text-red-500 hover:text-red-700 font-bold text-sm"
+                  >
+                    <IoTrashOutline /> 삭제
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      ))}
+          ))
+        )}
+      </div>
 
-      {/* 모달 영역 */}
+      {/* 🔥 [핵심] 모달 연결 */}
       {showModal && (
-        <div className="fixed inset-0 ...">
-          <div className="bg-white ...">
-            <h2>{targetLedger ? '내역 수정' : '새 내역 추가'}</h2>
-            <form onSubmit={handleSubmit}>
-              {/* input 필드들은 formData와 연결 */}
-              {/* ... */}
-              <button type="submit">저장</button>
-              <button type="button" onClick={() => setShowModal(false)}>취소</button>
-            </form>
-          </div>
-        </div>
+        <LedgerModal
+          onClose={() => {
+            setShowModal(false);
+            setTargetLedger(null); // 닫을 때 타겟 초기화
+          }}
+          onUpdate={fetchLedgers}      // 저장 성공 시 목록 새로고침
+          initialData={targetLedger}   // 수정할 데이터 전달 (없으면 생성)
+        />
       )}
     </div>
   );
