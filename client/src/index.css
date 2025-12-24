@@ -1,0 +1,38 @@
+/* 1. 폰트 임포트는 무조건 맨 위에! */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+@import url('https://fonts.googleapis.com/css2?family=Do+Hyeon&display=swap');
+
+/* 2. 그 다음 테일윈드 불러오기 */
+@import "tailwindcss";
+
+/* 3. 테마 설정 */
+@theme {
+  /* 폰트 적용 */
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  --font-display: "Do Hyeon", sans-serif;
+  
+  /* 색상 정의 */
+  --color-paper: #fdfbf7;
+  --color-ink: #1a1a1a;
+}
+
+/* 4. 커스텀 스타일 (맨 아래) */
+body {
+  background-color: var(--color-paper); /* 배경색 강제 적용 */
+}
+
+/* 스크롤바 커스텀 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #333;
+}
