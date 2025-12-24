@@ -14,32 +14,37 @@ router.post('/create', async (req, res) => {
       submissionStart, submissionEnd, votingStart, votingEnd 
     } = req.body;
 
-    // (필요하다면 여기서 req.body.userId나 role을 체크하는 기존 로직을 추가할 수 있습니다)
-    
     const newContest = new Contest({
       title, description, category,
       submissionStart, submissionEnd, votingStart, votingEnd
     });
 
-    // 공모전(contest)인 경우 달력에 'important' 일정 자동 추가
+    // 🔥 [수정됨] Event 모델의 'date' 필드에 맞춰 수정
     if (category === 'contest' && votingStart && votingEnd) {
       const newEvent = new Event({
-        title: `[투표] ${title}`,
-        start: votingStart,
-        end: votingEnd,
+        title: `[투표] ${title}`, 
+        
+        // ❌ [삭제] 모델에 없는 필드라 에러 발생
+        // start: votingStart,
+        // end: votingEnd,
+
+        // ✅ [수정] 모델에 정의된 'date' 필드 사용 (투표 시작일을 기준으로 등록)
+        date: votingStart, 
+        
         type: 'important', 
-        description: `${title} 투표 기간입니다.`
+        // 설명에 종료일을 적어주어 정보 보완
+        description: `${title} 투표 기간입니다. (~${new Date(votingEnd).toLocaleDateString()}까지)`
       });
       
       const savedEvent = await newEvent.save();
-      newContest.linkedEventId = savedEvent._id;
+      newContest.linkedEventId = savedEvent._id; 
     }
 
     await newContest.save();
     res.status(201).json({ msg: "생성 완료", contest: newContest });
 
   } catch (err) {
-    console.error(err);
+    console.error(err); // 에러 로그 확인용
     res.status(500).json({ msg: "서버 오류" });
   }
 });
