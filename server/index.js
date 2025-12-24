@@ -30,9 +30,9 @@ app.use(cors({
   ],
   credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
+// 🔥 [수정] 용량 제한을 50MB로 늘립니다. (기본값은 100kb라서 이미지가 막힘)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // 3. Passport 설정 실행
 app.use(passport.initialize());
 passportConfig(); // 👈 여기서 ./passport.js의 설정을 실행합니다.
