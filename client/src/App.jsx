@@ -16,6 +16,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import ContestListPage from './pages/ContestListPage';
 import ContestDetailPage from './pages/ContestDetailPage';
 import AdminContestPage from './pages/AdminContestPage';
+import ScrollToTop from './components/ScrollToTop';
 
 // 로그인 처리 및 메인 페이지 분기 컴포넌트
 const AuthHandler = () => {
@@ -69,6 +70,7 @@ const AuthHandler = () => {
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <GlobalAlert />
       {/* 🔥 전체 레이아웃 래퍼: 내용이 짧아도 Footer가 바닥에 붙게 함 */}
       <div className="flex flex-col min-h-screen">
