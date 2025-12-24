@@ -89,13 +89,13 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 router.get('/google/callback', 
   passport.authenticate('google', { failureRedirect: '/login?fail=true', session: false }),
   async (req, res) => {
+    // passport에서 이제 무조건 user를 만들어 주므로 여기로 들어옵니다.
     const user = req.user;
-    
-    // 🔥 [수정] 배포 주소(CLIENT_URL) 사용 (없으면 로컬호스트)
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 
-    // 신규 유저 -> 추가 정보 입력 페이지
-    if (!user.studentId) {
+    // 🔥 [확인] 학번(studentId)이 없으면 -> 정보 입력 페이지로 이동
+    if (!user.studentId || !user.generation) {
+      // 프론트엔드가 이 쿼리 파라미터를 받아서 "추가 정보 입력 모달"을 띄워야 합니다.
       return res.redirect(`${clientUrl}/login?google=pending&email=${user.email}&name=${encodeURIComponent(user.name)}&googleId=${user.googleId}`);
     }
 
@@ -104,7 +104,7 @@ router.get('/google/callback',
       return res.redirect(`${clientUrl}/login?fail=approval_pending`);
     }
 
-    // 로그인 성공 -> 메인으로
+    // 모든 정보 있고 승인됨 -> 로그인 성공
     res.redirect(`${clientUrl}/?login=success&email=${user.email}`);
   }
 );
@@ -112,24 +112,28 @@ router.get('/google/callback',
 // 5. 구글 회원가입 마무리 (학번, 기수 입력)
 router.post('/google/register', async (req, res) => {
   try {
-    const { email, googleId, name, studentId, generation } = req.body;
+    // 프론트엔드에서 보낸 정보
+    const { email, studentId, generation } = req.body; // name, googleId는 이미 DB에 있으니 굳이 안 받아도 됨
     
-    // 이메일로 유저 찾아서 업데이트
+    // passport에서 이미 생성해둔 유저를 찾음
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ msg: "유저를 찾을 수 없습니다." });
+    
+    if (!user) return res.status(404).json({ msg: "유저를 찾을 수 없습니다. (Passport 생성 오류)" });
 
-    user.name = name;
+    // 🔥 [수정] 누락된 정보 업데이트
     user.studentId = studentId;
-    user.generation = generation;
-    user.googleId = googleId;
-    // user.isApproved = false; // 기본값 유지
+    user.generation = Number(generation); // 숫자로 변환 확실하게
+    
+    // 혹시 이름도 수정하고 싶다면
+    if(req.body.name) user.name = req.body.name;
 
     await user.save();
-    res.json({ msg: "정보 등록 완료", user });
+    
+    res.json({ msg: "정보 등록 완료. 관리자 승인을 기다려주세요.", user });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json(err);
+    console.error("Google Register Error:", err);
+    res.status(500).json({ msg: "정보 저장 실패", err });
   }
 });
 
