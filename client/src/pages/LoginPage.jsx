@@ -53,7 +53,9 @@ const LoginPage = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = '/auth/google';
+    // 환경 변수(VITE_API_URL)에 이미 '.../api'까지 들어있으므로 '/auth/google'을 붙입니다.
+    // 예: https://lyricssync.duckdns.org/INKSERVER/api/auth/google
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
   };
 
   // 폼 제출 핸들러 (로그인 / 가입 / 비번찾기)

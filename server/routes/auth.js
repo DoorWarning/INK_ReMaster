@@ -89,21 +89,23 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 router.get('/google/callback', 
   passport.authenticate('google', { failureRedirect: '/login?fail=true', session: false }),
   async (req, res) => {
-    // req.user는 passport.js에서 넘겨준 user 객체
     const user = req.user;
+    
+    // 🔥 [수정] 배포 주소(CLIENT_URL) 사용 (없으면 로컬호스트)
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 
-    // 신규 유저(학번 없음) -> 추가 정보 입력 페이지로 이동
+    // 신규 유저 -> 추가 정보 입력 페이지
     if (!user.studentId) {
-      return res.redirect(`http://localhost:5173/login?google=pending&email=${user.email}&name=${encodeURIComponent(user.name)}&googleId=${user.googleId}`);
+      return res.redirect(`${clientUrl}/login?google=pending&email=${user.email}&name=${encodeURIComponent(user.name)}&googleId=${user.googleId}`);
     }
 
-    // 기존 유저 -> 로그인 성공 처리
+    // 미승인 유저
     if (!user.isApproved) {
-      return res.redirect('http://localhost:5173/login?fail=approval_pending');
+      return res.redirect(`${clientUrl}/login?fail=approval_pending`);
     }
 
-    // 성공 -> 메인으로 이동 (토큰 발급을 위해 클라이언트에서 sync 호출 필요)
-    res.redirect(`http://localhost:5173/?login=success&email=${user.email}`);
+    // 로그인 성공 -> 메인으로
+    res.redirect(`${clientUrl}/?login=success&email=${user.email}`);
   }
 );
 
