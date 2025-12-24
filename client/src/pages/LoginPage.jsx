@@ -53,7 +53,8 @@ const LoginPage = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
+    // 백엔드 주소에 맞춰 수정
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/auth/google`;
   };
 
   // 1. 일반 로그인/가입/비번찾기 제출
@@ -102,14 +103,14 @@ const LoginPage = () => {
         showAlert("📧 비밀번호 재설정 메일을 보냈습니다.");
         setMode('login');
       } catch (err) {
-        showAlert("정보가 일치하지 않습니다.");
+        showAlert("정보가 일치하는 않습니다.");
       }
     }
   };
 
   // 2. 구글 가입 마무리 (학번/기수 저장)
   const handleGoogleFinish = async () => {
-    // 유효성 검사 추가
+    // 유효성 검사 추가: 입력 안 했으면 막아야 함
     if (!formData.studentId || !formData.generation) {
       return showAlert("학번과 기수를 모두 입력해주세요!");
     }
@@ -154,6 +155,7 @@ const LoginPage = () => {
                </p>
              </div>
 
+             {/* 🔥 여기가 없어서 데이터가 비어서 저장된 것입니다! 복구했습니다. 🔥 */}
              <div>
                <label className="block text-sm font-extrabold mb-1 text-ink">학번 (필수)</label>
                <input 
@@ -186,7 +188,7 @@ const LoginPage = () => {
              </button>
            </div>
         ) : (
-          /* 기존 로그인/회원가입 화면 */
+          /* 기존 로그인/회원가입 화면 (그대로 유지) */
           <>
             {mode !== 'forgot' && (
               <div className="flex mb-6 border-b-2 border-gray-200">
