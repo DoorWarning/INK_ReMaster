@@ -19,9 +19,20 @@ const Header = ({ onMenuClick, onLogoClick, user, isAuthenticated, navigate }) =
       <div className="flex items-center gap-3">
         {isAuthenticated ? (
           <>
-            <button onClick={() => navigate('/mypage')} className="hidden sm:block font-bold text-ink hover:underline text-sm">
-              {user?.name}님
+            {/* 🔥 [수정] hidden sm:block 제거 (모바일에서도 보임) + 기수(generation) 표시 */}
+            <button 
+              onClick={() => navigate('/mypage')} 
+              className="font-bold text-ink hover:underline text-sm flex items-center gap-1"
+            >
+              <span>{user?.name}</span>
+              {/* 기수 정보가 있으면 (N기) 형태로 표시 */}
+              {user?.generation && (
+                <span className="text-xs text-gray-500 font-normal">
+                  ({user.generation}기)
+                </span>
+              )}
             </button>
+
             {user?.role === 'admin' && (
               <button onClick={() => navigate('/admin')} className="px-2 py-1 bg-yellow-400 border-2 border-ink font-bold text-xs shadow-sm">ADMIN</button>
             )}
