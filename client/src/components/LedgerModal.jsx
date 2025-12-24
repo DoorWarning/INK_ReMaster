@@ -49,13 +49,13 @@ const LedgerModal = ({ onClose, onUpdate }) => {
       if (files.length > 0) {
         const formData = new FormData();
         files.forEach(f => formData.append('images', f));
-        const upRes = await api.post('http://localhost:4000/api/upload', formData, {
+        const upRes = await api.post('/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         imageUrls = upRes.data.urls;
       }
 
-      await api.post('http://localhost:4000/api/ledgers', {
+      await api.post('/ledgers', {
         semester, title, items, totalAmount, imageUrls, userId: user._id
       });
 

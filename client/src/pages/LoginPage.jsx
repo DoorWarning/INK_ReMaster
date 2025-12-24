@@ -53,7 +53,7 @@ const LoginPage = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:4000/api/auth/google';
+    window.location.href = '/auth/google';
   };
 
   // 폼 제출 핸들러 (로그인 / 가입 / 비번찾기)
@@ -62,7 +62,7 @@ const LoginPage = () => {
     if (mode === 'login') {
       if (!formData.email || !formData.password) return showAlert("이메일과 비밀번호를 입력해주세요.");
       try {
-        const res = await api.post('http://localhost:4000/api/auth/login', {
+        const res = await api.post('/auth/login', {
           email: formData.email,
           password: formData.password
         });
@@ -81,7 +81,7 @@ const LoginPage = () => {
     else if (mode === 'register') {
       if (!formData.email || !formData.password || !formData.name) return showAlert("필수 정보를 입력해주세요.");
       try {
-        await api.post('http://localhost:4000/api/auth/register', {
+        await api.post('/auth/register', {
           email: formData.email,
           password: formData.password,
           name: formData.name,
@@ -98,7 +98,7 @@ const LoginPage = () => {
     else if (mode === 'forgot') {
       if (!formData.email || !formData.name || !formData.studentId) return showAlert("이메일, 이름, 학번을 모두 입력해주세요.");
       try {
-        await api.post('http://localhost:4000/api/auth/forgot-password', {
+        await api.post('/auth/forgot-password', {
           email: formData.email,
           name: formData.name,
           studentId: formData.studentId
@@ -114,7 +114,7 @@ const LoginPage = () => {
   // 구글 가입 마무리
   const handleGoogleFinish = async () => {
     try {
-      const res = await api.post('http://localhost:4000/api/auth/google/register', {
+      const res = await api.post('/auth/google/register', {
         email: formData.email, googleId: formData.googleId, name: formData.name,
         studentId: formData.studentId, generation: Number(formData.generation)
       });

@@ -25,7 +25,7 @@ const EventModal = ({ date, events: initialEvents, onClose, onUpdate }) => {
         const day = date.getDate();
         
         // 백엔드에 하루치 데이터 요청
-        const res = await api.get(`http://localhost:4000/api/events?year=${year}&month=${month}&day=${day}`);
+        const res = await api.get(`/events?year=${year}&month=${month}&day=${day}`);
         setCurrentEvents(res.data);
       } catch (err) {
         console.error("일정 상세 로드 실패", err);
@@ -59,9 +59,9 @@ const EventModal = ({ date, events: initialEvents, onClose, onUpdate }) => {
       };
 
       if (formData.id) {
-        await api.put(`http://localhost:4000/api/events/${formData.id}`, payload);
+        await api.put(`/events/${formData.id}`, payload);
       } else {
-        await api.post(`http://localhost:4000/api/events`, payload);
+        await api.post(`/events`, payload);
       }
       
       // 저장 후 달력 갱신 (부모 컴포넌트용)
@@ -71,7 +71,7 @@ const EventModal = ({ date, events: initialEvents, onClose, onUpdate }) => {
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
       const day = date.getDate();
-      const res = await api.get(`http://localhost:4000/api/events?year=${year}&month=${month}&day=${day}`);
+      const res = await api.get(`/events?year=${year}&month=${month}&day=${day}`);
       setCurrentEvents(res.data);
 
       setViewMode('list'); // 목록으로 복귀
@@ -84,13 +84,13 @@ const EventModal = ({ date, events: initialEvents, onClose, onUpdate }) => {
   const handleDelete = (id) => {
     showConfirm("이 일정을 삭제하시겠습니까?", async () => {
       try {
-        await api.delete(`http://localhost:4000/api/events/${id}`);
+        await api.delete(`/events/${id}`);
         
         // 삭제 후 리스트 갱신
         const year = date.getFullYear();
         const month = date.getMonth() + 1;
         const day = date.getDate();
-        const res = await api.get(`http://localhost:4000/api/events?year=${year}&month=${month}&day=${day}`);
+        const res = await api.get(`/events?year=${year}&month=${month}&day=${day}`);
         setCurrentEvents(res.data);
 
         onUpdate(); // 달력 점 갱신

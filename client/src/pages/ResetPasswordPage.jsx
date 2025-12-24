@@ -19,7 +19,7 @@ const ResetPasswordPage = () => {
     if (password.length < 6) return showAlert("비밀번호는 6자 이상이어야 합니다.");
 
     try {
-      await api.post('http://localhost:4000/api/auth/reset-password', {
+      await api.post('/auth/reset-password', {
         token,
         newPassword: password
       });

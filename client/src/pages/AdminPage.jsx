@@ -37,7 +37,7 @@ const AdminPage = () => {
   const handleRoleChange = (targetUser, newRole) => {
     const executeChange = async () => {
       try {
-        await api.put(`http://localhost:4000/api/users/${targetUser._id}`, { role: newRole });
+        await api.put(`/users/${targetUser._id}`, { role: newRole });
         setUsers(prev => prev.map(u => u._id === targetUser._id ? { ...u, role: newRole } : u));
         showAlert("권한이 변경되었습니다.");
       } catch (err) { showAlert("변경 실패"); }
@@ -53,7 +53,7 @@ const AdminPage = () => {
   // 회비 납부 토글
   const toggleDues = async (targetUser) => {
     try {
-      await api.put(`http://localhost:4000/api/users/${targetUser._id}`, { hasPaidDues: !targetUser.hasPaidDues });
+      await api.put(`/users/${targetUser._id}`, { hasPaidDues: !targetUser.hasPaidDues });
       setUsers(prev => prev.map(u => u._id === targetUser._id ? { ...u, hasPaidDues: !u.hasPaidDues } : u));
     } catch (err) { showAlert("변경 실패"); }
   };
@@ -61,7 +61,7 @@ const AdminPage = () => {
   // 승인 토글
   const toggleApprove = async (targetUser) => {
     try {
-      await api.put(`http://localhost:4000/api/users/${targetUser._id}`, { isApproved: !targetUser.isApproved });
+      await api.put(`/users/${targetUser._id}`, { isApproved: !targetUser.isApproved });
       setUsers(prev => prev.map(u => u._id === targetUser._id ? { ...u, isApproved: !u.isApproved } : u));
       showAlert(targetUser.isApproved ? "승인이 취소되었습니다." : "가입이 승인되었습니다! 🎉");
     } catch (err) { showAlert("처리 실패"); }
@@ -75,7 +75,7 @@ const AdminPage = () => {
 
     showConfirm(`정말 [${targetUser.name}]님을 탈퇴시키겠습니까?\n이 작업은 되돌릴 수 없습니다.`, async () => {
       try {
-        await api.delete(`http://localhost:4000/api/users/${targetUser._id}`);
+        await api.delete(`/users/${targetUser._id}`);
         setUsers(prev => prev.filter(u => u._id !== targetUser._id));
         showAlert("성공적으로 탈퇴 처리되었습니다.");
       } catch (err) {

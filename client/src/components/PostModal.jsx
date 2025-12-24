@@ -43,7 +43,7 @@ const PostModal = ({ post, onClose, onUpdate }) => {
   const handleDelete = () => {
     showConfirm("정말 이 작품을 삭제하시겠습니까? 🗑️", async () => {
       try {
-        await api.delete(`http://localhost:4000/api/posts/${currentPost._id}`, {
+        await api.delete(`/posts/${currentPost._id}`, {
           data: { userId: user._id }
         });
         
@@ -59,7 +59,7 @@ const PostModal = ({ post, onClose, onUpdate }) => {
   // 수정 저장 핸들러
   const handleEditSave = async () => {
     try {
-      const res = await api.put(`http://localhost:4000/api/posts/${currentPost._id}`, {
+      const res = await api.put(`/posts/${currentPost._id}`, {
         userId: user._id,
         title: editTitle,
         content: editContent
@@ -86,7 +86,7 @@ const PostModal = ({ post, onClose, onUpdate }) => {
     setCurrentPost(prev => ({ ...prev, likes: newLikes }));
 
     try {
-      const res = await api.put(`http://localhost:4000/api/posts/${currentPost._id}/like`, { userId: user._id });
+      const res = await api.put(`/posts/${currentPost._id}/like`, { userId: user._id });
       setCurrentPost(prev => ({ ...prev, likes: res.data }));
       onUpdate();
     } catch (err) {
@@ -101,7 +101,7 @@ const PostModal = ({ post, onClose, onUpdate }) => {
     if (!user) return showAlert('로그인이 필요합니다!'); // 👈 커스텀 알림
 
     try {
-      await api.post(`http://localhost:4000/api/posts/${currentPost._id}/comment`, {
+      await api.post(`/posts/${currentPost._id}/comment`, {
         userId: user._id,
         userName: user.name || user.email.split('@')[0],
         text: commentText

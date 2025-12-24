@@ -26,7 +26,7 @@ const NoticeModal = ({ post, onClose, onUpdate }) => {
   useEffect(() => {
     const fetchLatestData = async () => {
       try {
-        const res = await api.get(`http://localhost:4000/api/posts/${post._id}`);
+        const res = await api.get(`/posts/${post._id}`);
         setCurrentPost(res.data);
         setEditTitle(res.data.title);
         setEditContent(res.data.content);
@@ -40,7 +40,7 @@ const NoticeModal = ({ post, onClose, onUpdate }) => {
   const handlePostDelete = () => {
     showConfirm("이 공지사항을 삭제하시겠습니까? 🗑️", async () => {
       try {
-        await api.delete(`http://localhost:4000/api/posts/${post._id}`, { data: { userId: user._id } });
+        await api.delete(`/posts/${post._id}`, { data: { userId: user._id } });
         showAlert("삭제되었습니다.");
         onUpdate();
         onClose();
@@ -50,7 +50,7 @@ const NoticeModal = ({ post, onClose, onUpdate }) => {
 
   const handlePostEditSave = async () => {
     try {
-      const res = await api.put(`http://localhost:4000/api/posts/${post._id}`, {
+      const res = await api.put(`/posts/${post._id}`, {
         userId: user._id, title: editTitle, content: editContent
       });
       setCurrentPost(prev => ({ ...prev, title: res.data.title, content: res.data.content }));
@@ -66,7 +66,7 @@ const NoticeModal = ({ post, onClose, onUpdate }) => {
     if (!user) return showAlert('로그인이 필요합니다!');
 
     try {
-      const res = await api.post(`http://localhost:4000/api/posts/${currentPost._id}/comment`, {
+      const res = await api.post(`/posts/${currentPost._id}/comment`, {
         userId: user._id,
         userName: user.name || user.email.split('@')[0],
         text: commentText
@@ -82,7 +82,7 @@ const NoticeModal = ({ post, onClose, onUpdate }) => {
   const handleCommentDelete = (commentId) => {
     showConfirm("댓글을 삭제하시겠습니까?", async () => {
       try {
-        const res = await api.delete(`http://localhost:4000/api/posts/${currentPost._id}/comment/${commentId}`, {
+        const res = await api.delete(`/posts/${currentPost._id}/comment/${commentId}`, {
           data: { userId: user._id }
         });
         setCurrentPost(res.data);
@@ -98,7 +98,7 @@ const NoticeModal = ({ post, onClose, onUpdate }) => {
   const saveEditComment = async (commentId) => {
     if (!editCommentText.trim()) return;
     try {
-      const res = await api.put(`http://localhost:4000/api/posts/${currentPost._id}/comment/${commentId}`, {
+      const res = await api.put(`/posts/${currentPost._id}/comment/${commentId}`, {
         userId: user._id,
         text: editCommentText
       });

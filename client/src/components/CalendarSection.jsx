@@ -17,7 +17,7 @@ const CalendarSection = () => {
     try {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
-      const res = await api.get(`http://localhost:4000/api/events?year=${year}&month=${month}`);
+      const res = await api.get(`/events?year=${year}&month=${month}`);
       setEvents(res.data);
     } catch (err) {
       console.error("일정 로드 실패", err);

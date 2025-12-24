@@ -72,14 +72,14 @@ const WritePage = () => {
       if (files.length > 0) {
         const formData = new FormData();
         files.forEach((file) => formData.append('images', file));
-        const uploadRes = await api.post('http://localhost:4000/api/upload', formData, {
+        const uploadRes = await api.post('/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         imageUrls = uploadRes.data.urls;
       }
 
       // 게시글 저장 (카테고리 포함)
-      await api.post('http://localhost:4000/api/posts', {
+      await api.post('/posts', {
         title,
         content,
         imageUrls,

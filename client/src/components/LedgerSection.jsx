@@ -44,7 +44,7 @@ const LedgerSection = () => {
     if (!selectedSemester) return; // 선택된 학기가 없으면 스킵
 
     try {
-      const res = await api.get(`http://localhost:4000/api/ledgers?semester=${selectedSemester}`);
+      const res = await api.get(`/ledgers?semester=${selectedSemester}`);
       setLedgers(res.data);
     } catch (err) { console.error(err); }
   }, [selectedSemester]);
@@ -72,7 +72,7 @@ const LedgerSection = () => {
   const handleDelete = (id) => {
     showConfirm("정말 이 장부를 삭제하시겠습니까?", async () => {
       try {
-        await api.delete(`http://localhost:4000/api/ledgers/${id}`, { data: { userId: user._id } });
+        await api.delete(`/ledgers/${id}`, { data: { userId: user._id } });
         fetchLedgers(); // 삭제 후 목록 갱신
         showAlert("삭제되었습니다.");
       } catch (err) { showAlert("권한이 없거나 오류 발생"); }

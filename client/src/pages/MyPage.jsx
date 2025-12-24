@@ -39,7 +39,7 @@ const MyPage = () => {
     }
 
     try {
-      const res = await api.put(`http://localhost:4000/api/users/profile/${user._id}`, {
+      const res = await api.put(`/users/profile/${user._id}`, {
         userId: user._id, // 본인 확인용
         name,
         password: password || undefined // 비어있으면 안 보냄

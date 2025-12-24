@@ -30,7 +30,7 @@ const AuthHandler = () => {
       if (loginStatus === 'success' && email) {
         setIsProcessing(true);
         try {
-          const res = await api.post('http://localhost:4000/api/auth/sync', { email });
+          const res = await api.post('/auth/sync', { email });
           login(res.data);
           console.log("로그인 동기화 완료:", res.data);
           navigate('/'); 

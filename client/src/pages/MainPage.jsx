@@ -93,7 +93,7 @@ const MainPage = () => {
           setRecentNotices(noticeRes.data.slice(0, 3));
           setPosts(artRes.data);
         } else {
-          const res = await api.get(`http://localhost:4000/api/posts?category=${category}`);
+          const res = await api.get(`/posts?category=${category}`);
           setPosts(res.data);
         }
       } catch (err) {
@@ -263,7 +263,7 @@ const MainPage = () => {
               post={selectedPost} onClose={() => setSelectedPost(null)} 
               onUpdate={() => {
                 const target = category === 'home' ? 'art' : category;
-                api.get(`http://localhost:4000/api/posts?category=${target}`).then(res => setPosts(res.data));
+                api.get(`/posts?category=${target}`).then(res => setPosts(res.data));
               }} 
             />
           )}
