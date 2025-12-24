@@ -13,6 +13,8 @@ const userRoute = require('./routes/users');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // 1. DB 연결
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected'))
