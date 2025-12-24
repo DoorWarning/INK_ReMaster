@@ -6,7 +6,7 @@ const UserSchema = new mongoose.Schema({
   password: { type: String }, // 구글 로그인은 없을 수 있음
   googleId: { type: String },
   name: { type: String, required: true },
-  studentId: { type: String, required: true },
+  studentId: { type: String, required: false },
   generation: { type: Number, required: true },
   role: { type: String, default: 'member' },
   isApproved: { type: Boolean, default: false },
