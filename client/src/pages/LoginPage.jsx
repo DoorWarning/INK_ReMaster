@@ -68,6 +68,12 @@ const LoginPage = () => {
           email: formData.email,
           password: formData.password
         });
+
+        const { token } = res.data;
+        // 1. 로컬 스토리지에 즉시 저장 (새로고침 대비)
+        localStorage.setItem('token', token)
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
         login(res.data);
         showAlert(`${res.data.name}님 환영합니다! 👋`);
         navigate('/');
