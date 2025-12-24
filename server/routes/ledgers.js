@@ -71,4 +71,27 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// 4. 🔥 장부 수정하기 (PUT) - 추가됨
+router.put('/:id', async (req, res) => {
+  try {
+    const { date, description, type, amount, category, semester } = req.body;
+    
+    // ID로 찾아서 업데이트 (new: true는 수정된 최신 데이터를 반환하라는 뜻)
+    const updatedLedger = await Ledger.findByIdAndUpdate(
+      req.params.id,
+      { date, description, type, amount, category, semester },
+      { new: true } 
+    );
+
+    if (!updatedLedger) {
+      return res.status(404).json({ msg: "해당 내역을 찾을 수 없습니다." });
+    }
+
+    res.json(updatedLedger);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "서버 에러" });
+  }
+});
+
 module.exports = router;
