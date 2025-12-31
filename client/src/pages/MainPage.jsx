@@ -85,13 +85,20 @@ const MainPage = () => {
 
   useEffect(() => {
     // 1. 공모전 데이터 가져오기 (항상 확인)
-    const fetchLatestContest = async () => {
+   const fetchLatestContest = async () => {
       try {
         const res = await api.get('/contests');
-        // 카테고리가 'contest'인 것 중 최신 1개
-        const contests = res.data.filter(c => c.category === 'contest');
-        if (contests.length > 0) {
-          setCurrentContest(contests[0]);
+        const now = new Date();
+
+        // 🔥 [수정] 1. 공모전 타입이고 2. 마감일이 아직 지나지 않은 것만 필터링
+        const activeContests = res.data.filter(c => {
+          return c.category === 'contest' && new Date(c.votingEnd) > now;
+        });
+
+        if (activeContests.length > 0) {
+          setCurrentContest(activeContests[0]); // 가장 최신 1개
+        } else {
+          setCurrentContest(null); // 진행중인 게 없으면 안 뜸
         }
       } catch (err) {
         console.error("공모전 로드 실패:", err);
