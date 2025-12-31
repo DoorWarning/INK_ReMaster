@@ -1,6 +1,6 @@
 # 🎨 INK (아주대학교 만화창작소학회)
 
-> **아주대학교 소프트웨어융합대학 미디어학부 만화 창작 소학회, INK 공식 웹사이트** > Ajou Univ. Cartoon Creation Society Official Web Service
+>**아주대학교 소프트웨어융합대학 미디어학부 만화 창작 소학회, INK 공식 웹사이트**  
 
 <br/>
 
