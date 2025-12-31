@@ -24,41 +24,43 @@ const AdminContestPage = () => {
   };
 
  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      // 1. 기존 formData 복사
-      const payload = { ...formData };
+  e.preventDefault();
+  try {
+    const payload = { ...formData };
 
-      // 2. 🔥 [핵심 수정] "이 시간은 한국 시간(+09:00)입니다"라고 명시적으로 지정
-      // datetime-local의 값은 "2025-12-31T09:32" 형태입니다.
-      // 여기에 ":00+09:00"을 붙여서 "2025-12-31T09:32:00+09:00"으로 만듭니다.
-      // 이렇게 보내면 서버는 "아, 한국 9시니까 UTC로는 0시구나"라고 정확히 계산해서 저장합니다.
-      
-      if (payload.category === 'contest') {
-        if (payload.submissionStart) {
-          payload.submissionStart = `${payload.submissionStart}:00+09:00`; 
-        }
-        if (payload.submissionEnd) {
-          payload.submissionEnd = `${payload.submissionEnd}:00+09:00`;
-        }
-        if (payload.votingStart) {
-          payload.votingStart = `${payload.votingStart}:00+09:00`;
-        }
-        if (payload.votingEnd) {
-          payload.votingEnd = `${payload.votingEnd}:00+09:00`;
-        }
+    // 🔥 [최종 해결] UTC 기준 시간으로 변환해서 전송
+    // 설명: 사용자가 '09:32'를 입력하면, toISOString()은 자동으로 9시간을 뺀 '00:32'를 만듭니다.
+    // 서버(UTC)는 '00:32'를 받아서 그대로 저장합니다.
+    // 나중에 한국에서 조회하면 '00:32 UTC'는 다시 '09:32 KST'로 정확히 보입니다.
+
+    if (payload.category === 'contest') {
+      if (payload.submissionStart) {
+        payload.submissionStart = new Date(payload.submissionStart).toISOString();
       }
-
-      // 3. 서버로 전송
-      await api.post('/contests/create', payload);
-      
-      showAlert("공모전/정기모임이 생성되었습니다! 🎉");
-      navigate('/contests');
-    } catch (err) {
-      console.error(err);
-      showAlert("생성 실패");
+      if (payload.submissionEnd) {
+        payload.submissionEnd = new Date(payload.submissionEnd).toISOString();
+      }
+      if (payload.votingStart) {
+        payload.votingStart = new Date(payload.votingStart).toISOString();
+      }
+      if (payload.votingEnd) {
+        payload.votingEnd = new Date(payload.votingEnd).toISOString();
+      }
     }
-  };
+
+    // 개발자 도구(F12) 콘솔에서 확인해보세요. 
+    // 찍히는 시간이 입력한 시간보다 '9시간 전'이어야 정상입니다! (예: 09:32 -> 00:32)
+    console.log("서버로 보내는 데이터:", payload); 
+
+    await api.post('/contests/create', payload);
+    
+    showAlert("공모전/정기모임이 생성되었습니다! 🎉");
+    navigate('/contests');
+  } catch (err) {
+    console.error(err);
+    showAlert("생성 실패");
+  }
+};
 
   return (
     <div className="min-h-screen bg-paper p-6 font-sans">
