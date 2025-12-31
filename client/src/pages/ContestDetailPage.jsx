@@ -5,6 +5,8 @@ import api from '../api/axios';
 import useAuthStore from '../store/useAuthStore';
 import useAlertStore from '../store/useAlertStore';
 import { IoHeart, IoHeartOutline, IoAddCircle, IoArrowBack } from 'react-icons/io5';
+
+// 레이아웃 컴포넌트
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 
@@ -19,6 +21,7 @@ const ContestDetailPage = () => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
+  // 업로드 폼 상태
   const [uploadData, setUploadData] = useState({ title: '', description: '', file: null });
 
   const fetchDetails = async () => {
@@ -35,34 +38,34 @@ const ContestDetailPage = () => {
 
   useEffect(() => { fetchDetails(); }, [id]);
 
+  // 투표 핸들러
   const handleVote = async (entryId) => {
     if (!user) return showAlert("로그인이 필요합니다.");
     try {
       const res = await api.post(`/contests/entry/${entryId}/vote`, { userId: user._id });
       showAlert(res.data.msg);
-      fetchDetails(); 
+      fetchDetails(); // 데이터 갱신
     } catch (err) {
       showAlert(err.response?.data?.msg || "투표 실패");
     }
   };
 
-  // 🔥 [수정] 작품 업로드 핸들러 (Key 이름 변경: file -> images)
+  // 🔥 [수정] 작품 업로드 핸들러
   const handleUpload = async () => {
     if (!uploadData.file || !uploadData.title) return showAlert("제목과 이미지는 필수입니다.");
+    
     try {
       // 1. 이미지 업로드
       const formData = new FormData();
-      // ❌ 기존: formData.append('file', uploadData.file);
-      // ✅ 수정: 서버가 'images'를 기다리므로 이름을 맞춰줍니다.
+      // ✅ 서버의 Multer 설정('images')과 이름 일치시킴
       formData.append('images', uploadData.file); 
       
       const uploadRes = await api.post('/upload', formData, { 
         headers: { 'Content-Type': 'multipart/form-data' } 
       });
       
-      // 서버가 배열로 URL을 줍니다 (['https://...'])
-      // 첫 번째 URL을 가져옵니다.
-      const imageUrl = uploadRes.data.urls[0]; 
+      // 서버가 { urls: [...] } 형태로 반환하므로 첫 번째 URL 사용
+      const imageUrl = uploadRes.data.urls[0];
 
       // 2. 출품 정보 저장
       await api.post(`/contests/${id}/upload`, {
@@ -79,15 +82,16 @@ const ContestDetailPage = () => {
 
     } catch (err) {
       console.error(err);
-      // 에러 메시지 분기 처리 (기간 문제인지 시스템 문제인지)
-      if (err.response && err.response.status === 400) {
-        showAlert(err.response.data.msg); // "제출 기간이 아닙니다" 등 서버 메시지 표시
+      // 서버에서 보낸 에러 메시지(기간 아님 등)가 있으면 띄워줌
+      if (err.response && err.response.data && err.response.data.msg) {
+        showAlert(err.response.data.msg);
       } else {
         showAlert("업로드 실패 (서버 오류)");
       }
     }
   };
 
+  // 공모전 삭제 핸들러 (관리자용)
   const handleDelete = () => {
     showConfirm("정말 이 공모전을 삭제하시겠습니까?\n모든 출품작과 캘린더 일정도 함께 삭제됩니다.", async () => {
       try {
@@ -101,12 +105,13 @@ const ContestDetailPage = () => {
     });
   };
 
+  // 조기 마감 핸들러 (관리자용)
   const handleEarlyClose = () => {
     showConfirm("투표를 지금 즉시 마감하시겠습니까?\n(마감 후에는 투표 결과를 볼 수 있습니다.)", async () => {
       try {
         await api.put(`/contests/${id}/close`);
         showAlert("조기 마감되었습니다.");
-        fetchDetails(); 
+        fetchDetails(); // 화면 갱신 (결과 공개됨)
       } catch (err) {
         console.error(err);
         showAlert("처리 실패");
@@ -118,6 +123,7 @@ const ContestDetailPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
+      {/* 헤더 & 사이드바 */}
       <Header 
         onMenuClick={() => setIsSidebarOpen(true)} 
         onLogoClick={() => navigate('/')} 
@@ -140,14 +146,26 @@ const ContestDetailPage = () => {
             <IoArrowBack /> 목록으로
           </button>
           
+          {/* 상단 정보 영역 */}
           <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b-2 border-gray-200 pb-6">
             <div className="flex-1">
               <span className="text-ink font-bold border-2 border-ink px-2 py-0.5 text-xs bg-white mb-2 inline-block shadow-[2px_2px_0px_0px_var(--color-ink)]">
                 {contest.category === 'contest' ? 'COMPETITION' : 'EXHIBITION'}
               </span>
               <h1 className="text-4xl font-display text-ink">{contest.title}</h1>
+              
+              {/* 🔥 [추가] 제출 기간 표시 (사용자가 기간을 확인할 수 있도록) */}
+              {contest.category === 'contest' && (
+                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded inline-block">
+                  <p className="text-sm font-bold text-blue-700">
+                    📅 작품 제출 기간: {new Date(contest.submissionStart).toLocaleString()} ~ {new Date(contest.submissionEnd).toLocaleString()}
+                  </p>
+                </div>
+              )}
+
               <p className="text-gray-600 mt-2 max-w-2xl font-medium whitespace-pre-line">{contest.description}</p>
               
+              {/* 관리자 전용 컨트롤 버튼 */}
               {user?.role === 'admin' && (
                 <div className="mt-4 flex gap-2">
                   <button 
@@ -176,12 +194,14 @@ const ContestDetailPage = () => {
           </div>
         </div>
 
+        {/* 작품 목록 그리드 */}
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {entries.map((entry, idx) => {
             const isVoted = entry.votes && entry.votes.includes(user?._id);
             
             return (
               <div key={entry._id} className="bg-white group relative border-2 border-gray-200 hover:border-ink transition-all shadow-sm hover:shadow-[6px_6px_0px_0px_var(--color-ink)] rounded-sm overflow-hidden">
+                {/* 순위 뱃지 (비공개 아닐 때만 노출) */}
                 {!entry.isHidden && idx < 3 && contest.category === 'contest' && (
                   <div className="absolute top-0 left-0 bg-yellow-400 text-ink font-display font-bold px-3 py-1 border-b-2 border-r-2 border-ink z-10 shadow-sm">
                     {idx + 1}등
@@ -220,6 +240,7 @@ const ContestDetailPage = () => {
           )}
         </div>
 
+        {/* 업로드 모달 */}
         {isUploadOpen && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white w-full max-w-md p-6 rounded-sm border-2 border-ink shadow-[8px_8px_0px_0px_var(--color-ink)] animate-fadeIn">

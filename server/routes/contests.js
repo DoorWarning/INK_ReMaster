@@ -105,27 +105,46 @@ router.get('/:id', async (req, res) => {
 router.post('/:id/upload', async (req, res) => {
   try {
     const { authorId, imageUrl, title, description } = req.body;
+    
+    // 1. 필수 정보 체크
     if (!authorId) return res.status(401).json({ msg: "로그인이 필요합니다." });
+    if (!imageUrl || !title) return res.status(400).json({ msg: "제목과 이미지는 필수입니다." });
 
     const contest = await Contest.findById(req.params.id);
-    const now = new Date();
+    if (!contest) return res.status(404).json({ msg: "공모전이 존재하지 않습니다." });
 
+    // 2. 🔥 [수정] 기간 체크 로직 (로그 추가)
     if (contest.category === 'contest') {
-      if (now < new Date(contest.submissionStart) || now > new Date(contest.submissionEnd)) {
-        return res.status(400).json({ msg: "제출 기간이 아닙니다." });
+      const now = new Date();
+      const start = new Date(contest.submissionStart);
+      const end = new Date(contest.submissionEnd);
+
+      // 서버 로그에 시간 출력 (디버깅용)
+      console.log(`[Upload Check] Current: ${now.toLocaleString()} / Start: ${start.toLocaleString()} / End: ${end.toLocaleString()}`);
+
+      if (now < start) {
+        return res.status(400).json({ msg: `아직 제출 기간이 아닙니다. (${start.toLocaleString()} 부터 시작)` });
+      }
+      
+      if (now > end) {
+        return res.status(400).json({ msg: `제출 기간이 마감되었습니다. (${end.toLocaleString()} 종료)` });
       }
     }
 
     const newEntry = new ContestEntry({
       contest: contest._id,
       author: authorId,
-      imageUrl, title, description
+      imageUrl,
+      title,
+      description
     });
 
     await newEntry.save();
     res.json({ msg: "출품 완료" });
+
   } catch (err) {
-    res.status(500).json({ msg: "업로드 실패" });
+    console.error(err);
+    res.status(500).json({ msg: "업로드 실패 (서버 오류)" });
   }
 });
 
