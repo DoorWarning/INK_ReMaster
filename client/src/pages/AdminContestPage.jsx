@@ -23,24 +23,36 @@ const AdminContestPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+ const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // 🔥 [수정 핵심] 문자열 그대로 보내지 않고 Date 객체로 변환
-      // 이렇게 해야 브라우저가 "아, 이건 한국 시간 9시구나"라고 인식해서
-      // 서버에는 알맞은 UTC 시간으로 변환해 보냅니다.
+      // 1. 기존 formData 복사
       const payload = { ...formData };
 
+      // 2. 🔥 [핵심 수정] "이 시간은 한국 시간(+09:00)입니다"라고 명시적으로 지정
+      // datetime-local의 값은 "2025-12-31T09:32" 형태입니다.
+      // 여기에 ":00+09:00"을 붙여서 "2025-12-31T09:32:00+09:00"으로 만듭니다.
+      // 이렇게 보내면 서버는 "아, 한국 9시니까 UTC로는 0시구나"라고 정확히 계산해서 저장합니다.
+      
       if (payload.category === 'contest') {
-        if (payload.submissionStart) payload.submissionStart = new Date(payload.submissionStart);
-        if (payload.submissionEnd) payload.submissionEnd = new Date(payload.submissionEnd);
-        if (payload.votingStart) payload.votingStart = new Date(payload.votingStart);
-        if (payload.votingEnd) payload.votingEnd = new Date(payload.votingEnd);
+        if (payload.submissionStart) {
+          payload.submissionStart = `${payload.submissionStart}:00+09:00`; 
+        }
+        if (payload.submissionEnd) {
+          payload.submissionEnd = `${payload.submissionEnd}:00+09:00`;
+        }
+        if (payload.votingStart) {
+          payload.votingStart = `${payload.votingStart}:00+09:00`;
+        }
+        if (payload.votingEnd) {
+          payload.votingEnd = `${payload.votingEnd}:00+09:00`;
+        }
       }
 
+      // 3. 서버로 전송
       await api.post('/contests/create', payload);
       
-      showAlert("공모전/정기모임이 생성되었습니다! 🎉\n(공모전은 캘린더에도 등록되었습니다.)");
+      showAlert("공모전/정기모임이 생성되었습니다! 🎉");
       navigate('/contests');
     } catch (err) {
       console.error(err);
