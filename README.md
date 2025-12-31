@@ -66,7 +66,7 @@
 | **Database** | ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white) |
 | **ORM** | `Mongoose` |
 | **Auth** | `Passport.js` (Google OAuth 2.0), `JWT` |
-| **Storage** | `AWS S3` (@aws-sdk/client-s3) |
+| **Storage** | `Cloudflare R2` (S3 Compatible) |
 
 <br/>
 
@@ -134,9 +134,12 @@ SESSION_SECRET=your_session_secret
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 
-# AWS S3 (이미지 업로드용)
-AWS_ACCESS_KEY_ID=your_aws_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret
-AWS_REGION=ap-northeast-2
-AWS_BUCKET_NAME=your_bucket_name
+# Cloudflare R2 (Image Storage)
+# R2는 S3 호환 API를 사용하므로 AWS SDK를 통해 접근합니다.
+R2_ACCESS_KEY_ID=your_r2_access_key_id
+R2_SECRET_ACCESS_KEY=your_r2_secret_access_key
+R2_BUCKET_NAME=your_bucket_name
+R2_ACCOUNT_ID=your_cloudflare_account_id
+# 예: https://<accountid>.r2.cloudflarestorage.com
+R2_ENDPOINT=https://your_account_id.r2.cloudflarestorage.com
 ```
