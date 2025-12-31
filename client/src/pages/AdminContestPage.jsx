@@ -26,7 +26,20 @@ const AdminContestPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/contests/create', formData);
+      // 🔥 [수정 핵심] 문자열 그대로 보내지 않고 Date 객체로 변환
+      // 이렇게 해야 브라우저가 "아, 이건 한국 시간 9시구나"라고 인식해서
+      // 서버에는 알맞은 UTC 시간으로 변환해 보냅니다.
+      const payload = { ...formData };
+
+      if (payload.category === 'contest') {
+        if (payload.submissionStart) payload.submissionStart = new Date(payload.submissionStart);
+        if (payload.submissionEnd) payload.submissionEnd = new Date(payload.submissionEnd);
+        if (payload.votingStart) payload.votingStart = new Date(payload.votingStart);
+        if (payload.votingEnd) payload.votingEnd = new Date(payload.votingEnd);
+      }
+
+      await api.post('/contests/create', payload);
+      
       showAlert("공모전/정기모임이 생성되었습니다! 🎉\n(공모전은 캘린더에도 등록되었습니다.)");
       navigate('/contests');
     } catch (err) {
